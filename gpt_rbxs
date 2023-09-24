@@ -1,116 +1,158 @@
--- Create a LocalScript in StarterPlayerScripts
+-- Create a ScreenGui for the UI
+local gui = Instance.new("ScreenGui")
+gui.Name = "chat gpt scripts"
+gui.ResetOnSpawn = false
+gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-local player = game.Players.LocalPlayer
+-- Create a frame to hold the options
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 150)
+frame.Position = UDim2.new(0, 10, 0, 10) -- Adjust the position to be at the top left corner
+frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+frame.BorderSizePixel = 2
+frame.Parent = gui
 
--- UI Creation
-local ui = Instance.new("ScreenGui")
-ui.Name = "CustomUI"
+-- Create a label for the UI name
+local uiName = Instance.new("TextLabel")
+uiName.Size = UDim2.new(1, 0, 0, 30)
+uiName.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+uiName.BorderSizePixel = 2
+uiName.Text = "chat gpt scripts"
+uiName.TextColor3 = Color3.new(1, 1, 1)
+uiName.Font = Enum.Font.SourceSansBold
+uiName.TextSize = 20
+uiName.Parent = frame
 
--- Option 1: "miau"
-local option1 = Instance.new("TextButton")
-option1.Name = "miau"
-option1.Text = "Miau"
-option1.Parent = ui
-option1.MouseButton1Click:Connect(function()
-    player.Character:BreakJoints()
+-- Function to create buttons
+local function createButton(name, func)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 180, 0, 30)
+    button.Position = UDim2.new(0.5, -90, 0, 40 + (#frame:GetChildren() - 2) * 40) -- Adjust position based on number of options
+    button.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    button.BorderSizePixel = 2
+    button.Text = name
+    button.Parent = frame
+    button.MouseButton1Click:Connect(func)
+end
+
+-- Function to create toggleable options
+local function createToggle(name, func)
+    local toggle = Instance.new("TextLabel")
+    toggle.Size = UDim2.new(0, 180, 0, 30)
+    toggle.Position = UDim2.new(0.5, -90, 0, 40 + (#frame:GetChildren() - 2) * 40) -- Adjust position based on number of options
+    toggle.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    toggle.BorderSizePixel = 2
+    toggle.Text = name
+    toggle.Parent = frame
+
+    local indicator = Instance.new("TextLabel")
+    indicator.Size = UDim2.new(0, 20, 0, 20)
+    indicator.Position = UDim2.new(0.9, -10, 0.5, -10)
+    indicator.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    indicator.TextColor3 = Color3.new(1, 1, 1)
+    indicator.Text = "OFF"
+    indicator.Parent = toggle
+
+    toggle.MouseButton1Click:Connect(function()
+        if indicator.Text == "OFF" then
+            indicator.Text = "ON"
+            func(true)
+        else
+            indicator.Text = "OFF"
+            func(false)
+        end
+    end)
+end
+
+-- Function to remove the UI
+local function removeUI()
+    gui:Destroy()
+end
+
+-- Option 1: "miau" sets health to zero
+createButton("miau", function()
+    game.Players.LocalPlayer.Character.Humanoid.Health = 0
 end)
 
--- Option 2: "aimpaulo"
-local option2 = Instance.new("TextButton")
-option2.Name = "aimpaulo"
-option2.Text = "Aimpaulo"
-option2.Parent = ui
-local aiming = false
-option2.MouseButton1Click:Connect(function()
-    aiming = not aiming
-end)
+-- Option 2: "aimpaulo" aims at the nearest player
+local aimPauloEnabled = false
+createButton("aimpaulo", function()
+    local closestPlayer = nil
+    local closestDistance = math.huge
 
--- Option 3: "destruir ui"
-local option3 = Instance.new("TextButton")
-option3.Name = "destruir ui"
-option3.Text = "Destruir UI"
-option3.Parent = ui
-option3.MouseButton1Click:Connect(function()
-    aiming = false
-    ui:Destroy()
-end)
+    for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+        if otherPlayer ~= game.Players.LocalPlayer and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - otherPlayer.Character.HumanoidRootPart.Position).magnitude
+            if distance < closestDistance then
+                closestPlayer = otherPlayer
+                closestDistance = distance
+            end
+        end
+    end
 
--- Option 4: "espum"
-local option4 = Instance.new("TextButton")
-option4.Name = "espum"
-option4.Text = "Espum"
-option4.Parent = ui
-local espum = false
-option4.MouseButton1Click:Connect(function()
-    espum = not espum
-end)
-
--- Keybinds
-game:GetService("UserInputService").InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.K then
-        aiming = not aiming
+    if closestPlayer then
+        local target = closestPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if target then
+            game.Workspace.CurrentCamera.CFrame = CFrame.new(game.Workspace.CurrentCamera.CFrame.Position, target.Position)
+        end
     end
 end)
 
-ui.Parent = player:WaitForChild("PlayerGui")
+-- Option 3: "destruir ui" turns off option 2 and removes the UI
+createButton("destruir ui", function()
+    aimPauloEnabled = false
+    removeUI()
+end)
 
--- Update Loop
+-- Option 4: "espum" adds selection boxes and labels
+local espumEnabled = false
+createButton("espum", function()
+    espumEnabled = not espumEnabled
+end)
+
+-- Main loop for ESP
 while true do
-    wait(2)
-    if aiming then
-        -- Find nearest player
-        local nearestPlayer = nil
-        local nearestDistance = math.huge
-        for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
-            if otherPlayer ~= player then
-                local distance = (otherPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                if distance < nearestDistance then
-                    nearestPlayer = otherPlayer
-                    nearestDistance = distance
-                end
-            end
-        end
-        if nearestPlayer then
-            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, nearestPlayer.Character.HumanoidRootPart.Position)
-        end
-    end
+    wait(0.1)
+    if espumEnabled then
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                local head = player.Character:FindFirstChild("Head")
 
-    if espum then
-        -- Add selection boxes
-        for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
-            if otherPlayer ~= player and otherPlayer.Character then
-                for _, part in ipairs(otherPlayer.Character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        local selectionBox = Instance.new("SelectionBox")
-                        selectionBox.Adornee = part
-                        selectionBox.Color3 = Color3.new(0, 1, 0) -- Green color
-                        selectionBox.Name = "ESP"
-                        selectionBox.LineThickness = 0.05
-                        selectionBox.SurfaceTransparency = 0.7
-                        selectionBox.SurfaceColor3 = Color3.new(0, 1, 0)
-                        selectionBox.Parent = part
-                        local label = Instance.new("TextLabel")
-                        label.Text = otherPlayer.Name
-                        label.Size = UDim2.new(0, 100, 0, 20)
-                        label.Position = UDim2.new(0, 0, 0, -30)
-                        label.Parent = selectionBox
-                    end
-                end
-            end
-        end
-    else
-        -- Remove selection boxes
-        for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
-            if otherPlayer ~= player and otherPlayer.Character then
-                for _, part in ipairs(otherPlayer.Character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        local selectionBox = part:FindFirstChild("ESP")
-                        if selectionBox then
-                            selectionBox:Destroy()
-                        end
-                    end
+                if head then
+                    local box = Instance.new("SelectionBox")
+                    box.Adornee = head
+                    box.Color3 = Color3.new(1, 0, 0)
+                    box.Name = "ESP"
+                    box.Transparency = 0.5
+                    box.AlwaysOnTop = true
+                    box.LineThickness = 0.05
+                    box.Parent = head
+
+                    local nameLabel = Instance.new("BillboardGui")
+                    nameLabel.Name = "NameLabel"
+                    nameLabel.Size = UDim2.new(0, 100, 0, 50)
+                    nameLabel.StudsOffset = Vector3.new(0, 2, 0)
+                    nameLabel.AlwaysOnTop = true
+                    nameLabel.Adornee = head
+                    nameLabel.Parent = head
+
+                    local textLabel = Instance.new("TextLabel")
+                    textLabel.Size = UDim2.new(0, 100, 0, 50)
+                    textLabel.Text = player.Name
+                    textLabel.TextColor3 = Color3.new(1, 1, 1)
+                    textLabel.BackgroundTransparency = 1
+                    textLabel.Font = Enum.Font.SourceSansBold
+                    textLabel.TextSize = 20
+                    textLabel.Parent = nameLabel
                 end
             end
         end
     end
 end
+
+-- Keybinds
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.K then
+        aimPauloEnabled = not aimPauloEnabled
+    end
+end)
