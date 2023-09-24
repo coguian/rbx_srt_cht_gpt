@@ -1,4 +1,4 @@
---Aqui de novo só que pedi para colocar o nome dos botões do jeito que eu quero kkkkk
+--gpt scripto
 
 
 local Players = game:GetService("Players")
