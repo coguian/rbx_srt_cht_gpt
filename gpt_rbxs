@@ -128,3 +128,77 @@ local function UpdateEspum()
                 if player.Character then
                     for _, bodyPart in ipairs(player.Character:GetDescendants()) do
                         if bodyPart:IsA("BasePart") then
+                            local selectionBox = bodyPart:FindFirstChild("SelectionBox")
+                            if selectionBox then
+                                selectionBox:Destroy()
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function UpdateAimpaulo()
+    while true do
+        wait(0.1)
+
+        if aimpauloEnabled then
+            local closestPlayer = nil
+            local closestDistance = math.huge
+
+            local myPosition = Players.LocalPlayer.Character.Torso.Position
+
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    local playerPosition = player.Character.HumanoidRootPart.Position
+                    local distance = (myPosition - playerPosition).magnitude
+
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestPlayer = player
+                    end
+                end
+            end
+
+            if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local playerPosition = closestPlayer.Character.HumanoidRootPart.Position
+                local lookVector = (playerPosition - Camera.CFrame.Position).unit
+
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + Vector3.new(lookVector.x, 0, lookVector.z))
+            end
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    if aimpauloEnabled then
+        local closestPlayer = nil
+        local closestDistance = math.huge
+
+        local myPosition = Players.LocalPlayer.Character.Torso.Position
+
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local playerPosition = player.Character.HumanoidRootPart.Position
+                local distance = (myPosition - playerPosition).magnitude
+
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+
+        if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local playerPosition = closestPlayer.Character.HumanoidRootPart.Position
+            local lookVector = (playerPosition - Camera.CFrame.Position).unit
+
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + Vector3.new(lookVector.x, 0, lookVector.z))
+        end
+    end
+end)
+
+coroutine.wrap(UpdateEspum)()
+coroutine.wrap(UpdateAimpaulo)()
